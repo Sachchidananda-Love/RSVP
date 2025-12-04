@@ -83,7 +83,6 @@
       position: relative;
       width: min(92vw, 900px);
       overflow: visible;
-      padding-bottom: 80px;
     }
 
     .map-wrapper .hero-img {
@@ -509,6 +508,42 @@
       transition: transform 120ms ease, box-shadow 120ms ease;
     }
 
+    /* Center cards on small/mid screens regardless of hotspot position */
+    @media (max-width: 900px) {
+      .hotspot .card {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translate(-50%, -50%) !important;
+        width: calc(100vw - 32px) !important;
+        max-width: 420px !important;
+        max-height: 80vh !important;
+        z-index: 2000 !important;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .hotspot[data-align="left"] .card {
+        right: auto !important;
+        left: 50% !important;
+      }
+
+      /* disable hover/focus show on touch widths */
+      .hotspot:hover .card,
+      .hotspot:focus-within .card {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .hotspot.active .card {
+        opacity: 1;
+        transform: translate(-50%, -50%) !important;
+        pointer-events: auto;
+      }
+    }
+
     @media (max-width: 640px) {
       .hero-img {
         border-radius: 10px;
@@ -524,34 +559,11 @@
         --size: 22px;
       }
 
-      .card {
-        top: auto;
-        bottom: calc(100% + 10px);
-        left: 50%;
-        right: auto;
-        transform: translate(-50%, 10px) scale(0.98);
-        width: min(82vw, 320px);
-      }
-
-      .hotspot[data-align="left"] .card {
-        right: auto;
-        left: 50%;
-      }
-
-      .hotspot:hover .card,
-      .hotspot:focus-within .card,
-      .hotspot.active .card {
-        transform: translate(-50%, 0) scale(1);
-      }
-
       .map-links {
         gap: 16px;
         margin-top: -110px;
       }
 
-      .map-wrapper {
-        padding-bottom: 120px;
-      }
 
       .map-link {
         font-size: 15px;
@@ -788,6 +800,58 @@
   <script>
     const hotspots = Array.from(document.querySelectorAll('.hotspot'));
     const buttons = hotspots.map(h => h.querySelector('button'));
+    const mobileMax = 900;
+
+    // Keep track of cards moved out of their hotspot so we can restore them
+    const movedCards = new Map();
+
+    function moveCardToBody(card) {
+      if (!card || movedCards.has(card)) return;
+      const parent = card.parentNode;
+      const next = card.nextSibling;
+      const originHotspot = parent.closest && parent.closest('.hotspot') ? parent.closest('.hotspot') : null;
+      movedCards.set(card, { parent, next, originHotspot });
+      document.body.appendChild(card);
+    }
+
+    function restoreCard(card) {
+      if (!card || !movedCards.has(card)) return;
+      const info = movedCards.get(card);
+      const { parent, next } = info;
+      if (next) parent.insertBefore(card, next);
+      else parent.appendChild(card);
+      movedCards.delete(card);
+    }
+
+    function applyModalStyle(card) {
+      if (!card) return;
+      // Move the card out of the hotspot (and any transformed ancestor) so
+      // `position:fixed` will be relative to the viewport and truly centered.
+      moveCardToBody(card);
+      card.style.position = 'fixed';
+      card.style.top = '50%';
+      card.style.left = '50%';
+      card.style.right = 'auto';
+      card.style.bottom = 'auto';
+      card.style.transform = 'translate(-50%, -50%) scale(1)';
+      card.style.width = 'calc(100vw - 32px)';
+      card.style.maxWidth = '420px';
+      card.style.maxHeight = '80vh';
+      card.style.overflow = 'auto';
+      card.style.zIndex = '2000';
+      // Ensure the card is visible even though it's no longer a child of the hotspot
+      card.style.opacity = '1';
+      card.style.pointerEvents = 'auto';
+    }
+
+    function clearModalStyle(card) {
+      if (!card) return;
+      ['position','top','left','right','bottom','transform','width','maxWidth','maxHeight','overflow','zIndex','opacity','pointerEvents'].forEach(prop => {
+        card.style[prop] = '';
+      });
+      // If we moved the card into the body, restore it back into its hotspot
+      restoreCard(card);
+    }
 
     function closeAll(except) {
       hotspots.forEach(h => {
@@ -795,6 +859,19 @@
           h.classList.remove('active');
           const btn = h.querySelector('button');
           if (btn) btn.setAttribute('aria-expanded', 'false');
+          clearModalStyle(h.querySelector('.card'));
+        }
+      });
+      // Also clear any cards we've moved out of their hotspots (they may not
+      // be selectable via `querySelector` on the hotspot anymore).
+      movedCards.forEach((info, card) => {
+        const originHotspot = info && info.originHotspot;
+        if (originHotspot && originHotspot !== except) {
+          // remove active class from origin as well
+          originHotspot.classList.remove('active');
+          const originBtn = originHotspot.querySelector('button');
+          if (originBtn) originBtn.setAttribute('aria-expanded', 'false');
+          clearModalStyle(card);
         }
       });
     }
@@ -806,6 +883,16 @@
         closeAll(isActive ? null : hotspot);
         hotspot.classList.toggle('active', !isActive);
         btn.setAttribute('aria-expanded', String(!isActive));
+
+        const cardEl = hotspot.querySelector('.card');
+        if (cardEl) {
+          if (!isActive && window.innerWidth <= mobileMax) {
+            applyModalStyle(cardEl);
+          } else {
+            clearModalStyle(cardEl);
+          }
+        }
+
       });
 
       btn.addEventListener('focus', () => {
