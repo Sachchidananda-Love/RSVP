@@ -541,6 +541,9 @@
       box-sizing: border-box;
       vertical-align: middle;
       flex-shrink: 0;
+      /* Keep the glyph perfectly centered across engines */
+      line-height: 0;
+      transform: translateY(1px);
     }
 
     .submit-wrap {
