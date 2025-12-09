@@ -541,9 +541,14 @@
       box-sizing: border-box;
       vertical-align: middle;
       flex-shrink: 0;
-      /* Keep the glyph perfectly centered across engines */
-      line-height: 0;
-      transform: translateY(1px);
+    }
+
+    /* Ensure the inline SVG scales and is centered inside the circle */
+    .add-guest .plus svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      color: var(--orange);
     }
 
     .submit-wrap {
@@ -858,7 +863,11 @@
 
         <div class="rsvp-actions">
           <button type="button" class="add-guest" id="add-guest">
-            Add Guest <span class="plus">+</span>
+            Add Guest <span class="plus" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
           </button>
         </div>
 
