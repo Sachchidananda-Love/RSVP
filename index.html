@@ -143,6 +143,18 @@
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
     }
 
+    /* When a hotspot is active (its card is open) make the button green */
+    .hotspot.active button {
+      background: var(--green);
+      border-color: var(--beige);
+      color: var(--white);
+    }
+
+    /* Hide the pulsing ring when active so the green state is clear */
+    .hotspot.active .pulse {
+      display: none;
+    }
+
     .card {
       position: absolute;
       left: calc(100% + 12px);
@@ -164,6 +176,29 @@
       margin: 0 0 6px;
       font-size: 18px;
       letter-spacing: 0.03em;
+    }
+
+    /* Close button in the card (top-right) - hidden on desktop, shown on mobile */
+    .card .card-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--green);
+      font-size: 18px;
+      line-height: 1;
+      display: none; /* default hidden on desktop */
+      place-items: center;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease;
+    }
+
+    .card .card-close:hover {
+      background: rgba(0,0,0,0.04);
     }
 
     .card .time {
@@ -525,6 +560,11 @@
         pointer-events: none;
       }
 
+      /* show close button on mobile */
+      .card .card-close {
+        display: grid;
+      }
+
       .hotspot[data-align="left"] .card {
         right: auto !important;
         left: 50% !important;
@@ -643,17 +683,19 @@
         <div class="hotspot" style="--x: 70.76%; --y: 35.75%;" data-align="left">
           <span class="pulse" aria-hidden="true"></span>
           <button type="button" aria-label="Horse barn and arena" aria-expanded="false"></button>
-          <div class="card" role="dialog">
-            <h3>Petting Zoo</h3>
-            <p class="time">4:30 - 5:30</p>
-            <p>You can go visit the miniature horses and donkey.</p>
-          </div>
+            <div class="card" role="dialog">
+              <button class="card-close" aria-label="Close">×</button>
+              <h3>Petting Zoo</h3>
+              <p class="time">4:30 - 5:30</p>
+              <p>You can go visit the miniature horses and donkey.</p>
+            </div>
         </div>
 
         <div class="hotspot" style="--x: 72.58%; --y: 41.58%;">
           <span class="pulse" aria-hidden="true"></span>
           <button type="button" aria-label="Ceremony lawn" aria-expanded="false"></button>
           <div class="card" role="dialog">
+            <button class="card-close" aria-label="Close">×</button>
             <h3>Dinner &amp; Reception</h3>
             <p class="time">5:30 - 7:30</p>
             <p>Speeches, dinner, and dancing will take place in the dressage arena.</p>
@@ -664,6 +706,7 @@
           <span class="pulse" aria-hidden="true"></span>
           <button type="button" aria-label="Reception tent" aria-expanded="false"></button>
           <div class="card" role="dialog">
+            <button class="card-close" aria-label="Close">×</button>
             <h3>Ceremony</h3>
             <p class="time">4:00 - 4:30</p>
             <p>Unless we get rain, the ceremony will take place in the field.</p>
@@ -674,6 +717,7 @@
           <span class="pulse" aria-hidden="true"></span>
           <button type="button" aria-label="Parking and shuttles" aria-expanded="false"></button>
           <div class="card" role="dialog">
+            <button class="card-close" aria-label="Close">×</button>
             <h3>Parking &amp; Tents</h3>
             <p class="time">2:00 PM - 3:00 PM</p>
             <p>Cars will be parked in the field. After dancing, guests camping overnight will return to a fire in the field.</p>
@@ -804,14 +848,15 @@
 
     // Keep track of cards moved out of their hotspot so we can restore them
     const movedCards = new Map();
+    const mapLinks = document.querySelector('.map-links');
 
-    function moveCardToBody(card) {
-      if (!card || movedCards.has(card)) return;
+    function moveCardToContainer(card, container) {
+      if (!card || movedCards.has(card) || !container) return;
       const parent = card.parentNode;
       const next = card.nextSibling;
       const originHotspot = parent.closest && parent.closest('.hotspot') ? parent.closest('.hotspot') : null;
-      movedCards.set(card, { parent, next, originHotspot });
-      document.body.appendChild(card);
+      movedCards.set(card, { parent, next, originHotspot, container });
+      container.appendChild(card);
     }
 
     function restoreCard(card) {
@@ -825,9 +870,28 @@
 
     function applyModalStyle(card) {
       if (!card) return;
-      // Move the card out of the hotspot (and any transformed ancestor) so
-      // `position:fixed` will be relative to the viewport and truly centered.
-      moveCardToBody(card);
+      // On mobile, place the card over the map-links area so it sits just
+      // below the map and covers the Open in Google/Apple Maps links.
+      if (window.innerWidth <= mobileMax && mapLinks) {
+        moveCardToContainer(card, mapLinks);
+        card.style.position = 'absolute';
+        card.style.top = '0';
+        card.style.left = '50%';
+        card.style.right = 'auto';
+        card.style.bottom = 'auto';
+        card.style.transform = 'translateX(-50%) scale(1)';
+        card.style.width = 'calc(100% - 32px)';
+        card.style.maxWidth = '420px';
+        card.style.maxHeight = '80vh';
+        card.style.overflow = 'auto';
+        card.style.zIndex = '2001';
+        card.style.opacity = '1';
+        card.style.pointerEvents = 'auto';
+        return;
+      }
+
+      // Default desktop behavior: move the card to body and center it fixed
+      moveCardToContainer(card, document.body);
       card.style.position = 'fixed';
       card.style.top = '50%';
       card.style.left = '50%';
@@ -839,7 +903,6 @@
       card.style.maxHeight = '80vh';
       card.style.overflow = 'auto';
       card.style.zIndex = '2000';
-      // Ensure the card is visible even though it's no longer a child of the hotspot
       card.style.opacity = '1';
       card.style.pointerEvents = 'auto';
     }
@@ -851,6 +914,18 @@
       });
       // If we moved the card into the body, restore it back into its hotspot
       restoreCard(card);
+    }
+
+    function closeCard(card) {
+      if (!card) return;
+      const info = movedCards.get(card);
+      const origin = info && info.originHotspot ? info.originHotspot : card.closest('.hotspot');
+      if (origin) {
+        origin.classList.remove('active');
+        const originBtn = origin.querySelector('button');
+        if (originBtn) originBtn.setAttribute('aria-expanded', 'false');
+      }
+      clearModalStyle(card);
     }
 
     function closeAll(except) {
@@ -900,11 +975,46 @@
       });
     });
 
+    // Close when clicking anywhere outside hotspots (maintains previous behavior)
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.hotspot')) {
         closeAll(null);
       }
     });
+
+    // Wire up the close buttons inside cards
+    document.querySelectorAll('.card .card-close').forEach(cb => {
+      cb.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = e.currentTarget.closest('.card');
+        closeCard(card);
+      });
+    });
+
+    // Auto-close card on mobile when the map has been scrolled ~25% off screen
+    const mapWrapper = document.querySelector('.map-wrapper');
+    let scrollTicking = false;
+    function handleScrollAutoClose() {
+      if (window.innerWidth > mobileMax) return;
+      if (!mapWrapper) return;
+      if (scrollTicking) return;
+      scrollTicking = true;
+      requestAnimationFrame(() => {
+        const rect = mapWrapper.getBoundingClientRect();
+        // If the top of the map has moved up past 25% of its height, close cards
+        const threshold = -rect.height * 0.25;
+        if (rect.top <= threshold) {
+          movedCards.forEach((info, card) => {
+            if (info && info.container === mapLinks) {
+              closeCard(card);
+            }
+          });
+        }
+        scrollTicking = false;
+      });
+    }
+
+    document.addEventListener('scroll', handleScrollAutoClose, { passive: true });
 
     // RSVP add-guest duplication
     (function() {
