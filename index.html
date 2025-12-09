@@ -454,6 +454,14 @@
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
+      width: 100%;
+    }
+
+    /* Push the choices (Yes/No) to the right side of the row.
+       Using the option label as the spacer is more robust across
+       widths and when the row wraps. */
+    .rsvp-option-label {
+      margin-right: auto;
     }
 
     .rsvp-option-label {
@@ -465,6 +473,11 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+    }
+
+    /* Keep the Yes/No choices visually grouped on the right */
+    .rsvp-choice + .rsvp-choice {
+      margin-left: 12px;
     }
 
     .rsvp-choice input[type="radio"] {
@@ -479,13 +492,19 @@
       cursor: pointer;
     }
 
-    .rsvp-choice input[type="radio"]:checked::before {
-      content: "";
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
+    /* When selected, fill the whole circle for a solid radio */
+    .rsvp-choice input[type="radio"] {
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+
+    .rsvp-choice input[type="radio"]:checked {
       background: var(--green);
-      display: block;
+      border-color: var(--green);
+    }
+
+    /* Remove the small inner-dot pseudo element (not needed when filling) */
+    .rsvp-choice input[type="radio"]:checked::before {
+      content: none;
     }
 
     .rsvp-actions {
@@ -513,10 +532,15 @@
       height: 22px;
       border: 2px solid var(--orange);
       border-radius: 50%;
-      display: grid;
-      place-items: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 800;
       line-height: 1;
+      font-size: inherit;
+      box-sizing: border-box;
+      vertical-align: middle;
+      flex-shrink: 0;
     }
 
     .submit-wrap {
