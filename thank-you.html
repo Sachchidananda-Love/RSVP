@@ -22,9 +22,28 @@
       .overlay .wallet{width:44vw}
       .hero-wrap{padding:8px}
     }
+    /* Page loader overlay */
+    #site-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--green);z-index:99999;transition:opacity 260ms ease}
+    .loader-ring{width:86px;height:86px;display:block}
+    .loader-ring .ring-left,.loader-ring .ring-right{transform-box:fill-box;transform-origin:center}
+    .loader-ring .ring-left{animation:spin-left 1200ms linear infinite}
+    .loader-ring .ring-right{animation:spin-right 900ms linear infinite reverse}
+    .loader-ring circle{stroke-linecap:round}
+    @keyframes spin-left{to{transform:rotate(360deg)}}
+    @keyframes spin-right{to{transform:rotate(-360deg)}}
   </style>
 </head>
 <body>
+  <div id="site-loader" aria-hidden="true">
+    <svg class="loader-ring" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="color:var(--orange)">
+      <g class="ring-left">
+        <circle cx="22" cy="32" r="14" stroke="currentColor" stroke-width="4.5" fill="none" stroke-dasharray="60 30" stroke-dashoffset="10"></circle>
+      </g>
+      <g class="ring-right">
+        <circle cx="42" cy="32" r="14" stroke="currentColor" stroke-width="4.5" fill="none" stroke-dasharray="60 30" stroke-dashoffset="40"></circle>
+      </g>
+    </svg>
+  </div>
   <div class="hero-wrap" role="main">
     <!-- Full-bleed thank-you image (single instance) -->
     <img class="hero-img" src="Assets/thank-you.png" alt="Thank you">
@@ -35,5 +54,14 @@
       <img class="wallet" src="Assets/apple-wallet-button.png" alt="Add to Apple Wallet">
     </div>
   </div>
+  <script>
+    (function(){
+      const loader = document.getElementById('site-loader');
+      if (!loader) return;
+      function hide(){ loader.style.opacity='0'; setTimeout(()=>{ try{loader.remove()}catch(e){} },320); }
+      if (document.readyState === 'complete') hide(); else window.addEventListener('load', hide, { once: true });
+      setTimeout(()=>{ if (document.body.contains(loader)) hide(); }, 10000);
+    })();
+  </script>
 </body>
 </html>

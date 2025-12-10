@@ -429,6 +429,13 @@
       box-shadow: none;
     }
 
+    /* Highlight invalid fields so users can see where to fix */
+    .invalid {
+      outline: 3px solid var(--orange);
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+
     .rsvp-field textarea {
       resize: vertical;
       min-height: 70px;
@@ -513,6 +520,27 @@
       align-items: center;
       margin-top: clamp(12px, 2vw, 18px);
     }
+
+    /* Page loader overlay */
+    #site-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--green);
+      z-index: 99999;
+      transition: opacity 260ms ease;
+    }
+
+    .loader-ring { width: 86px; height: 86px; display: block; }
+    .loader-ring .ring-left,
+    .loader-ring .ring-right { transform-box: fill-box; transform-origin: center; }
+    .loader-ring .ring-left { animation: spin-left 1200ms linear infinite; }
+    .loader-ring .ring-right { animation: spin-right 900ms linear infinite reverse; }
+    .loader-ring circle { stroke-linecap: round; }
+    @keyframes spin-left { to { transform: rotate(360deg); } }
+    @keyframes spin-right { to { transform: rotate(-360deg); } }
 
     .add-guest {
       display: inline-flex;
@@ -700,9 +728,39 @@
         justify-content: center;
       }
     }
+
+    /* Desktop: bring Yes/No choices closer to their label */
+    @media (min-width: 900px) {
+      .rsvp-option-row {
+        align-items: center;
+      }
+      .rsvp-option-label {
+        margin-right: 8px; /* smaller gap between label and first choice on desktop */
+        min-width: 0;
+      }
+      .rsvp-choice + .rsvp-choice {
+        margin-left: 8px; /* keep small spacing between choices */
+      }
+      .rsvp-options {
+        justify-content: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
+  <!-- Page loader: shows until window 'load' completes -->
+  <div id="site-loader" aria-hidden="true">
+    <svg class="loader-ring" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="color:var(--orange)">
+      <!-- left ring group (has a gap) -->
+      <g class="ring-left">
+        <circle cx="22" cy="32" r="14" stroke="currentColor" stroke-width="4.5" fill="none" stroke-dasharray="60 30" stroke-dashoffset="10"></circle>
+      </g>
+      <!-- right ring group (has a gap) -->
+      <g class="ring-right">
+        <circle cx="42" cy="32" r="14" stroke="currentColor" stroke-width="4.5" fill="none" stroke-dasharray="60 30" stroke-dashoffset="40"></circle>
+      </g>
+    </svg>
+  </div>
   <main>
     <section class="panel orange">
       <img class="hero-img" src="Assets/title.png" alt="Tatiana &amp; Calem wedding invitation title">
@@ -829,7 +887,7 @@
                 <input id="last-name-1" data-base="last-name" name="last-name-1" type="text" placeholder="">
               </div>
               <div class="rsvp-field">
-                <label for="email-1">Email</label>
+                <label class="required" for="email-1">Email</label>
                 <input id="email-1" data-base="email" name="email-1" type="email" placeholder="">
               </div>
               <div class="rsvp-field">
@@ -1098,7 +1156,7 @@
     })();
 
     // Validate form on Submit and show a small accessible modal when required fields are missing
-    function showValidationModal(message) {
+    function showValidationModal(message, items, elements) {
       const existing = document.getElementById('validation-modal');
       if (existing) existing.remove();
 
@@ -1153,6 +1211,19 @@
 
       dialog.appendChild(p);
 
+      // If a list of missing items is provided, show it below the message
+      if (Array.isArray(arguments[1]) && arguments[1].length) {
+        const items = arguments[1];
+        const ul = document.createElement('ul');
+        ul.style.margin = '0 0 12px 18px';
+        items.forEach(it => {
+          const li = document.createElement('li');
+          li.textContent = it;
+          ul.appendChild(li);
+        });
+        dialog.appendChild(ul);
+      }
+
       // Button container aligned to bottom-right inside the dialog
       const btnWrap = document.createElement('div');
       btnWrap.style.display = 'flex';
@@ -1168,7 +1239,24 @@
       closeBtn.style.borderRadius = '8px';
       closeBtn.style.border = 'none';
       closeBtn.style.cursor = 'pointer';
-      closeBtn.addEventListener('click', () => overlay.remove());
+      // Close helper focuses the first invalid element (if present) after closing
+      function closeOverlay() {
+        try {
+          overlay.remove();
+        } catch (err) {}
+        // focus first invalid element if provided
+        const firstEl = (elements && elements.length) ? elements[0] : document.querySelector('.invalid');
+        if (firstEl) {
+          // if the element is a row container, try to find a focusable input inside
+          let toFocus = firstEl;
+          if (firstEl.querySelector) {
+            const inner = firstEl.querySelector('input, textarea, select');
+            if (inner) toFocus = inner;
+          }
+          try { toFocus.focus(); toFocus.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) {}
+        }
+      }
+      closeBtn.addEventListener('click', closeOverlay);
 
       btnWrap.appendChild(closeBtn);
       dialog.appendChild(btnWrap);
@@ -1185,17 +1273,21 @@
       closeBtn.focus();
 
       overlay.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Escape') overlay.remove();
+        if (ev.key === 'Escape') closeOverlay();
       });
-      overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
+      overlay.addEventListener('click', (ev) => { if (ev.target === overlay) closeOverlay(); });
     }
 
     function validateRSVPForm() {
       const form = document.getElementById('rsvp-form');
       const missing = [];
-      if (!form) return missing;
+      const elems = [];
+      if (!form) return { missing, elems };
 
-      // Validate per guest card: first/last name and the two radio groups
+      // basic email pattern (very simple, covers common cases)
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      // Validate per guest card: first/last name, email and the two radio groups
       const cards = form.querySelectorAll('.rsvp-card');
       cards.forEach((card, idx) => {
         const guestIndex = card.dataset.guestIndex || (idx + 1);
@@ -1203,42 +1295,108 @@
         const first = card.querySelector('[data-base="first-name"]');
         if (!first || first.value.trim() === '') {
           missing.push(`Guest ${guestIndex}: First Name`);
+          if (first) elems.push(first);
         }
 
         const last = card.querySelector('[data-base="last-name"]');
         if (!last || last.value.trim() === '') {
           missing.push(`Guest ${guestIndex}: Last Name`);
+          if (last) elems.push(last);
+        }
+
+        const email = card.querySelector('[data-base="email"]');
+        if (!email || email.value.trim() === '') {
+          missing.push(`Guest ${guestIndex}: Email`);
+          if (email) elems.push(email);
+        } else if (!emailPattern.test(email.value.trim())) {
+          missing.push(`Guest ${guestIndex}: Email is invalid`);
+          if (email) elems.push(email);
         }
 
         const attending = card.querySelectorAll('input[data-base="attendingDinner"]');
         if (attending && attending.length) {
           const any = Array.from(attending).some(i => i.checked);
-          if (!any) missing.push(`Guest ${guestIndex}: Attending Dinner`);
+          if (!any) {
+            missing.push(`Guest ${guestIndex}: Attending Dinner`);
+            // mark the row container if available
+            const row = card.querySelector('.rsvp-option-row');
+            if (row) elems.push(row);
+          }
         }
 
         const camping = card.querySelectorAll('input[data-base="campingOvernight"]');
         if (camping && camping.length) {
           const any = Array.from(camping).some(i => i.checked);
-          if (!any) missing.push(`Guest ${guestIndex}: Camping Overnight`);
+          if (!any) {
+            missing.push(`Guest ${guestIndex}: Camping Overnight`);
+            // mark the second option row specifically if possible
+            const rows = card.querySelectorAll('.rsvp-option-row');
+            if (rows && rows[1]) elems.push(rows[1]);
+          }
         }
       });
 
-      return missing;
+      return { missing, elems };
     }
 
     // Replace the old unconditional redirect with validation-aware handler
+    function clearValidationMarks() {
+      document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+    }
+
     document.querySelectorAll('.submit-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
-        const missing = validateRSVPForm();
-        if (missing.length) {
-          showValidationModal('please fill out the required fields marked by a star');
-          return;
-        }
+          const result = validateRSVPForm();
+          const missing = result.missing || [];
+          const elems = result.elems || [];
+          clearValidationMarks();
+          // helper to remove invalid class when user interacts
+          function attachClearListener(el) {
+            if (!el) return;
+            // For radio row containers, attach listener to contained radios
+            if (el.querySelector && el.querySelectorAll('input[type="radio"]').length) {
+              const radios = Array.from(el.querySelectorAll('input[type="radio"]'));
+              const handler = () => { el.classList.remove('invalid'); radios.forEach(r => r.removeEventListener('change', handler)); };
+              radios.forEach(r => r.addEventListener('change', handler));
+              return;
+            }
+            // For regular inputs
+            const handler = () => { el.classList.remove('invalid'); el.removeEventListener('input', handler); el.removeEventListener('change', handler); };
+            el.addEventListener('input', handler);
+            el.addEventListener('change', handler);
+          }
+
+          if (missing.length) {
+            // mark elements visually and attach listeners to clear markers
+            elems.forEach(el => {
+              try { el.classList.add('invalid'); attachClearListener(el); } catch (err) {}
+            });
+            // show modal with list of missing fields and pass elements for focusing
+            showValidationModal('please fill out the required fields marked by a star', missing, elems);
+            return;
+          }
         // proceed to thank-you when validation passes
         window.location.href = 'thank-you.html';
       });
     });
+
+    // Hide the page loader once all resources are loaded
+    (function() {
+      const loader = document.getElementById('site-loader');
+      if (!loader) return;
+      function hideLoader() {
+        loader.style.opacity = '0';
+        setTimeout(() => { try { loader.remove(); } catch (e) {} }, 320);
+      }
+      if (document.readyState === 'complete') {
+        hideLoader();
+      } else {
+        window.addEventListener('load', hideLoader, { once: true });
+        // Fallback: ensure loader removed after 12s in case load doesn't fire
+        setTimeout(() => { if (document.body.contains(loader)) hideLoader(); }, 12000);
+      }
+    })();
   </script>
 </body>
 </html>
