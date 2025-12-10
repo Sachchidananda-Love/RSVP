@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Thank You</title>
+  <style>
+    :root{--orange:#e79e41;--green:#374f2a;--white:#f9f7f4}
+    html,body{height:100%;margin:0}
+    body{background:var(--orange);color:var(--green);font-family:"Helvetica Neue",Arial,sans-serif;display:flex;align-items:center;justify-content:center}
+
+    /* Hero container holds the large thank-you PNG and the overlay */
+    .hero-wrap{position:relative;max-width:980px;width:100%;padding:20px;box-sizing:border-box}
+    .hero-img{display:block;width:100%;height:auto;border-radius:0;box-shadow:none;background:transparent}
+
+    /* Place the wallet buttons in an absolute overlay positioned in the bottom quarter */
+    .overlay{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(18% + 1in);display:flex;gap:20px;align-items:center;justify-content:center}
+    .overlay .wallet{display:block;width:240px;max-width:42vw;height:auto;border-radius:0;box-shadow:none;background:transparent}
+
+    @media (max-width:560px){
+      .overlay{bottom:calc(16% + 1in);gap:12px}
+      .overlay .wallet{width:44vw}
+      .hero-wrap{padding:8px}
+    }
+  </style>
+</head>
+<body>
+  <div class="hero-wrap" role="main">
+    <!-- Full-bleed thank-you image (single instance) -->
+    <img class="hero-img" src="Assets/thank-you.png" alt="Thank you">
+
+    <!-- Overlay the two wallet buttons in the bottom quarter of the hero image -->
+    <div class="overlay" aria-hidden="false">
+      <img class="wallet" src="Assets/google-wallet-button.png" alt="Add to Google Wallet">
+      <img class="wallet" src="Assets/apple-wallet-button.png" alt="Add to Apple Wallet">
+    </div>
+  </div>
+</body>
+</html>

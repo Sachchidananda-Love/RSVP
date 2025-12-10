@@ -1096,6 +1096,149 @@
         clone.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     })();
+
+    // Validate form on Submit and show a small accessible modal when required fields are missing
+    function showValidationModal(message) {
+      const existing = document.getElementById('validation-modal');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'validation-modal';
+      overlay.style.position = 'fixed';
+      overlay.style.inset = '0';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.background = 'rgba(0,0,0,0.36)';
+      overlay.style.zIndex = '4000';
+
+      const dialog = document.createElement('div');
+      dialog.setAttribute('role', 'alertdialog');
+      dialog.setAttribute('aria-modal', 'true');
+      dialog.style.maxWidth = '520px';
+      dialog.style.width = 'auto';
+      dialog.style.background = 'var(--white)';
+      dialog.style.color = 'var(--green)';
+      dialog.style.padding = '12px 14px';
+      dialog.style.borderRadius = '10px';
+      dialog.style.boxShadow = '0 14px 30px rgba(0,0,0,0.14)';
+      dialog.style.display = 'inline-block';
+      dialog.style.textAlign = 'center';
+      dialog.style.boxSizing = 'border-box';
+
+      const p = document.createElement('div');
+      p.style.margin = '0 0 12px';
+      p.style.fontWeight = '700';
+      p.style.textAlign = 'center';
+
+      // On narrow screens, split the message roughly in half across two lines
+      if (window.innerWidth <= 560 && typeof message === 'string') {
+        const words = message.split(/\s+/).filter(Boolean);
+        if (words.length > 3) {
+          const mid = Math.ceil(words.length / 2);
+          const first = words.slice(0, mid).join(' ');
+          const second = words.slice(mid).join(' ');
+          const line1 = document.createElement('div');
+          line1.textContent = first;
+          const line2 = document.createElement('div');
+          line2.textContent = second;
+          p.appendChild(line1);
+          p.appendChild(line2);
+        } else {
+          p.textContent = message || 'please fill out the required fields marked by a star';
+        }
+      } else {
+        p.textContent = message || 'please fill out the required fields marked by a star';
+      }
+
+      dialog.appendChild(p);
+
+      // Button container aligned to bottom-right inside the dialog
+      const btnWrap = document.createElement('div');
+      btnWrap.style.display = 'flex';
+      btnWrap.style.justifyContent = 'flex-end';
+      btnWrap.style.marginTop = '6px';
+      btnWrap.style.gap = '8px';
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = 'OK';
+      closeBtn.style.background = 'var(--orange)';
+      closeBtn.style.color = 'var(--green)';
+      closeBtn.style.fontWeight = '800';
+      closeBtn.style.padding = '8px 14px';
+      closeBtn.style.borderRadius = '8px';
+      closeBtn.style.border = 'none';
+      closeBtn.style.cursor = 'pointer';
+      closeBtn.addEventListener('click', () => overlay.remove());
+
+      btnWrap.appendChild(closeBtn);
+      dialog.appendChild(btnWrap);
+
+      // Wrap dialog in a block to allow centered inline-block sizing while keeping overlay centering
+      const wrapper = document.createElement('div');
+      wrapper.style.display = 'flex';
+      wrapper.style.alignItems = 'center';
+      wrapper.style.justifyContent = 'center';
+      wrapper.appendChild(dialog);
+
+      overlay.appendChild(wrapper);
+      document.body.appendChild(overlay);
+      closeBtn.focus();
+
+      overlay.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape') overlay.remove();
+      });
+      overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
+    }
+
+    function validateRSVPForm() {
+      const form = document.getElementById('rsvp-form');
+      const missing = [];
+      if (!form) return missing;
+
+      // Validate per guest card: first/last name and the two radio groups
+      const cards = form.querySelectorAll('.rsvp-card');
+      cards.forEach((card, idx) => {
+        const guestIndex = card.dataset.guestIndex || (idx + 1);
+
+        const first = card.querySelector('[data-base="first-name"]');
+        if (!first || first.value.trim() === '') {
+          missing.push(`Guest ${guestIndex}: First Name`);
+        }
+
+        const last = card.querySelector('[data-base="last-name"]');
+        if (!last || last.value.trim() === '') {
+          missing.push(`Guest ${guestIndex}: Last Name`);
+        }
+
+        const attending = card.querySelectorAll('input[data-base="attendingDinner"]');
+        if (attending && attending.length) {
+          const any = Array.from(attending).some(i => i.checked);
+          if (!any) missing.push(`Guest ${guestIndex}: Attending Dinner`);
+        }
+
+        const camping = card.querySelectorAll('input[data-base="campingOvernight"]');
+        if (camping && camping.length) {
+          const any = Array.from(camping).some(i => i.checked);
+          if (!any) missing.push(`Guest ${guestIndex}: Camping Overnight`);
+        }
+      });
+
+      return missing;
+    }
+
+    // Replace the old unconditional redirect with validation-aware handler
+    document.querySelectorAll('.submit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const missing = validateRSVPForm();
+        if (missing.length) {
+          showValidationModal('please fill out the required fields marked by a star');
+          return;
+        }
+        // proceed to thank-you when validation passes
+        window.location.href = 'thank-you.html';
+      });
+    });
   </script>
 </body>
 </html>
