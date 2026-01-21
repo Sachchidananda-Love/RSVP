@@ -1298,8 +1298,8 @@
       });
     }
 
-    async function submitRsvp({ guests }) {
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')) {
+ async function submitRsvp({ guests }) {
+  if (!APPS_SCRIPT_URL) {
     throw new Error('RSVP endpoint is not configured yet.');
   }
 
@@ -1308,14 +1308,14 @@
     guests,
   };
 
-  // Fire-and-forget POST (CORS-safe)
   await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
 
-  // With no-cors we cannot read a response here.
+  // If fetch doesn't throw, we assume it sent successfully
   return { success: true };
 }
 
@@ -1598,7 +1598,10 @@
         btn.textContent = 'Submitting...';
         try {
           await submitRsvp({ guests });
-          window.location.href = 'thank-you.html';
+setTimeout(() => {
+  window.location.href = 'thank-you.html';
+}, 600);
+
         } catch (err) {
           showValidationModal(err?.message || 'Failed to submit RSVP. Please try again.', [], []);
         } finally {
