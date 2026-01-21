@@ -275,12 +275,21 @@
 
     .schedule {
       display: grid;
-      grid-template-columns: auto auto auto;
+      /* Use equal flexible columns around the divider so the line stays centered */
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      gap: clamp(16px, 4vw, 28px);
+      column-gap: clamp(6px, 1.6vw, 10px);
+      row-gap: clamp(12px, 3vw, 18px);
       font-family: "Helvetica Neue", Arial, sans-serif;
       font-size: clamp(18px, 2vw, 24px);
       font-weight: 700;
+      justify-content: center;
+      justify-items: center;
+      text-align: center;
+      /* limit overall width so the 1fr columns don't stretch too wide */
+      width: min(720px, 96vw);
+      margin: 0 auto;
+      align-self: center;
     }
 
     .schedule .divider {
@@ -296,16 +305,49 @@
       gap: clamp(12px, 2vw, 18px);
     }
 
+    .schedule-col:first-child {
+      justify-items: end;
+      text-align: right;
+    }
+
+    .schedule-col:last-child {
+      justify-items: start;
+      text-align: left;
+    }
+
+    .schedule-note {
+      margin: clamp(10px, 2vw, 16px) 0 0;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    .when-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(12px, 3vw, 22px);
+      width: min(960px, 96vw);
+      margin: 0 auto;
+      text-align: center;
+      align-self: center;
+    }
+
     .calendar-actions {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: clamp(14px, 3vw, 24px);
-      margin-top: clamp(22px, 4vw, 36px);
+      margin: clamp(22px, 4vw, 36px) auto 0;
       font-family: "Helvetica Neue", Arial, sans-serif;
       font-weight: 800;
       letter-spacing: 0.02em;
       text-transform: uppercase;
+      width: 100%;
+      justify-self: center;
+      max-width: min(960px, 96vw);
     }
 
     .calendar-actions a {
@@ -709,11 +751,21 @@
       }
 
       .schedule {
-        grid-template-columns: auto auto auto;
+        grid-template-columns: max-content auto max-content;
         justify-items: center;
-        text-align: left;
+        text-align: center;
         font-size: 16px;
         gap: 12px;
+      }
+
+      .schedule-col:first-child {
+        justify-items: end;
+        text-align: right;
+      }
+
+      .schedule-col:last-child {
+        justify-items: start;
+        text-align: left;
       }
 
       .schedule .divider {
@@ -868,20 +920,25 @@
     </section>
 
     <section class="panel beige">
-      <h2 class="when-title">When</h2>
-      <div class="schedule">
-        <div class="schedule-col">
-          <div>2:00 PM</div>
-          <div>4:00 PM</div>
-          <div>5:00 PM</div>
-          <div>6:00 PM</div>
-        </div>
-        <div class="divider" aria-hidden="true"></div>
-        <div class="schedule-col">
-          <div>Arrival</div>
-          <div>Ceremony</div>
-          <div>Dinner</div>
-          <div>Reception</div>
+      <div class="when-block">
+        <h2 class="when-title">When</h2>
+        <p class="schedule-note">Itinerary may change slightly closer to the date</p>
+        <div class="schedule">
+          <div class="schedule-col">
+            <div>2:00 - 3:00 PM</div>
+            <div>4:00 - 4:30 PM</div>
+            <div>4:30 - 5:30 PM</div>
+            <div>5:30 - 7:30 PM</div>
+            <div>7:30 PM +</div>
+          </div>
+          <div class="divider" aria-hidden="true"></div>
+          <div class="schedule-col">
+            <div>Arrival</div>
+            <div>Ceremony</div>
+            <div>Petting Zoo</div>
+            <div>Dinner &amp; Reception</div>
+            <div>Party</div>
+          </div>
         </div>
       </div>
 
@@ -913,7 +970,7 @@
         <h2 class="gifts-title" style="color: var(--beige);">Dress Code</h2>
         <div class="gifts-headline" style="color: var(--beige);">Feel free to embrace<br>the occasion.</div>
         <p class="gifts-body" style="color: var(--beige);">We invite guests to dress as formal as they’d like</p>
-        <p class="gifts-body" style="color: var(--beige);">Just keep in mind that the celebration is on a horse farm, with reception in a dressage arena,<br>so grass &amp; dirt friendly footwear is recommended.</p>
+        <p class="gifts-body" style="color: var(--beige);">Just keep in mind that the celebration is on a horse farm, with reception in a dressage arena,<br>so grass &amp; dirt friendly footwear is recommended. (Stilettos will sink in the ground in the arena)</p>
       </div>
     </section>
 
