@@ -41,8 +41,11 @@
       pointer-events:auto;
     }
 
-    .overlay .wallet{
+    .overlay .wallet-link{
       display:block;
+    }
+
+    .overlay .wallet{
       width:240px;
       max-width:40vw;
       height:auto;
@@ -86,8 +89,12 @@
 
     <!-- Overlay the two wallet buttons in the bottom quarter of the hero image -->
     <div class="overlay" aria-hidden="false">
-      <img class="wallet" src="Assets/google-wallet-button.png" alt="Add to Google Wallet">
-      <img class="wallet" src="Assets/apple-wallet-button.png" alt="Add to Apple Wallet">
+      <a class="wallet-link" href="https://app.addtowallet.co/card/6971324bd534be7f41b88d9e" target="_blank" rel="noopener">
+        <img class="wallet" src="Assets/google-wallet-button.png" alt="Add to Google Wallet">
+      </a>
+      <a class="wallet-link" href="https://app.addtowallet.co/card/6971324bd534be7f41b88d9e" target="_blank" rel="noopener">
+        <img class="wallet" src="Assets/apple-wallet-button.png" alt="Add to Apple Wallet">
+      </a>
     </div>
   </div>
   <script>

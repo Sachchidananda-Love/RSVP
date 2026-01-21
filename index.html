@@ -400,6 +400,52 @@
       color: var(--green);
     }
 
+    .other-info {
+      max-width: 900px;
+      width: 100%;
+      text-align: left;
+      display: grid;
+      gap: clamp(14px, 3vw, 20px);
+      color: var(--orange);
+    }
+
+    .info-title {
+      font-family: "Snell Roundhand", "Apple Chancery", "Edwardian Script ITC", "Segoe Script", "Palatino", serif;
+      font-size: clamp(48px, 8vw, 78px);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin: 0;
+      color: var(--orange);
+      text-align: center;
+    }
+
+    .info-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: clamp(12px, 2vw, 18px);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: clamp(17px, 2.6vw, 21px);
+      line-height: 1.6;
+      color: var(--orange);
+    }
+
+    .info-list li {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .info-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--orange);
+      font-size: 1.4em;
+      line-height: 1;
+    }
+
     .lock-line {
       display: inline-block;
       white-space: nowrap;
@@ -971,6 +1017,16 @@
         <div class="gifts-headline" style="color: var(--beige);">Feel free to embrace<br>the occasion.</div>
         <p class="gifts-body" style="color: var(--beige);">We invite guests to dress as formal as they’d like</p>
         <p class="gifts-body" style="color: var(--beige);">Just keep in mind that the celebration is on a horse farm, with reception in a dressage arena,<br>so grass &amp; dirt friendly footwear is recommended. (Stilettos will sink in the ground in the arena)</p>
+      </div>
+    </section>
+
+    <section class="panel green">
+      <div class="other-info">
+        <h2 class="info-title">Other Info</h2>
+        <ul class="info-list">
+          <li>We ask that guests do not try to touch or get too near the horses except with farm supervision.</li>
+          <li>There will be some wine and beer provided on tables for the meal; anything further will be BYOB.</li>
+        </ul>
       </div>
     </section>
 
