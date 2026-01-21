@@ -31,8 +31,7 @@
       position:absolute;
       left:50%;
       transform:translateX(-50%);
-      /* keep the buttons anchored at roughly the same spot on the image
-         across sizes (about an inch higher than before on desktop) */
+      /* default placement (mobile-first); desktop overrides below */
       bottom: clamp(140px, 32%, 480px);
       display:flex;
       gap:20px;
@@ -41,18 +40,12 @@
       pointer-events:auto;
     }
 
-    .overlay .wallet-link{
-      display:block;
-    }
+    .overlay .wallet-link{display:block;}
+    .overlay .wallet{width:240px;max-width:40vw;height:auto;border-radius:0;box-shadow:none;background:transparent;}
+    .overlay .wallet-qr{display:none;width:520px;max-width:70vw;height:auto;}
 
-    .overlay .wallet{
-      width:240px;
-      max-width:40vw;
-      height:auto;
-      border-radius:0;
-      box-shadow:none;
-      background:transparent;
-    }
+    .wallet-row-mobile{display:flex;gap:20px;align-items:center;justify-content:center;}
+    .wallet-row-desktop{display:none;align-items:center;justify-content:center;}
 
     @media (max-width:560px){
       body{padding:8px 0;}
@@ -60,6 +53,14 @@
       .overlay{gap:12px}
       .overlay .wallet{width:44vw}
       .hero-wrap{padding:8px}
+    }
+
+    @media (min-width: 561px){
+      .wallet-row-mobile{display:none;}
+      .wallet-row-desktop{display:flex;}
+      .overlay .wallet-qr{display:block;}
+      /* move desktop QR row slightly downward relative to the image */
+      .overlay{bottom: clamp(96px, 27.5%, 380px);}
     }
     /* Page loader overlay */
     #site-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--green);z-index:99999;transition:opacity 260ms ease}
@@ -89,12 +90,19 @@
 
     <!-- Overlay the two wallet buttons in the bottom quarter of the hero image -->
     <div class="overlay" aria-hidden="false">
-      <a class="wallet-link" href="https://app.addtowallet.co/card/6971324bd534be7f41b88d9e" target="_blank" rel="noopener">
-        <img class="wallet" src="Assets/google-wallet-button.png" alt="Add to Google Wallet">
-      </a>
-      <a class="wallet-link" href="https://app.addtowallet.co/card/6971324bd534be7f41b88d9e" target="_blank" rel="noopener">
-        <img class="wallet" src="Assets/apple-wallet-button.png" alt="Add to Apple Wallet">
-      </a>
+      <div class="wallet-row-mobile">
+        <a class="wallet-link" href="https://app.addtowallet.co/card/6971324bd534be7f41b88d9e" target="_blank" rel="noopener">
+          <img class="wallet" src="Assets/google-wallet-button.png" alt="Add to Google Wallet">
+        </a>
+        <a class="wallet-link" href="https://app.addtowallet.co/card/6971324bd534be7f41b88d9e" target="_blank" rel="noopener">
+          <img class="wallet" src="Assets/apple-wallet-button.png" alt="Add to Apple Wallet">
+        </a>
+      </div>
+      <div class="wallet-row-desktop">
+        <a class="wallet-link" href="https://app.addtowallet.co/card/6971324bd534be7f41b88d9e" target="_blank" rel="noopener">
+          <img class="wallet-qr" src="Assets/qr.png" alt="Add to Wallet QR">
+        </a>
+      </div>
     </div>
   </div>
   <script>
