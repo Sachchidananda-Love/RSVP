@@ -1272,6 +1272,54 @@
 
     document.addEventListener('scroll', handleScrollAutoClose, { passive: true });
 
+    // RSVP submission helpers
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykWmUMRypf8cwflxgbspvIzDbCulshlbsuY1vLl6V3-jUbES9mIklSVPsUah_WJrtO/exec';
+
+    function buildGuestsPayload() {
+      const cards = Array.from(document.querySelectorAll('.rsvp-card'));
+      return cards.map(card => {
+        const getVal = (base) => {
+          const el = card.querySelector(`[data-base="${base}"]`);
+          if (!el) return '';
+          return (el.value || '').trim();
+        };
+        const attending = card.querySelector('input[data-base="attendingDinner"]:checked');
+        const camping = card.querySelector('input[data-base="campingOvernight"]:checked');
+        return {
+          firstName: getVal('first-name'),
+          lastName: getVal('last-name'),
+          email: getVal('email').toLowerCase(),
+          phone: getVal('phone'),
+          dietaryRestrictions: getVal('dietary'),
+          additionalNotes: getVal('notes'),
+          attendingDinner: attending ? attending.value === 'yes' : false,
+          campingOvernight: camping ? camping.value === 'yes' : false,
+        };
+      });
+    }
+
+    async function submitRsvp({ guests }) {
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')) {
+        throw new Error('RSVP endpoint is not configured yet.');
+      }
+      const payload = {
+        partyId: crypto.randomUUID(),
+        guests,
+      };
+
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const out = await res.json().catch(() => null);
+      if (!out || (out.ok !== true && out.success !== true)) {
+        throw new Error(out?.error || 'Failed to submit RSVP');
+      }
+      return out;
+    }
+
     // RSVP add-guest duplication
     (function() {
       const cardsContainer = document.getElementById('rsvp-cards');
@@ -1507,39 +1555,56 @@
     }
 
     document.querySelectorAll('.submit-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.preventDefault();
-          const result = validateRSVPForm();
-          const missing = result.missing || [];
-          const elems = result.elems || [];
-          clearValidationMarks();
-          // helper to remove invalid class when user interacts
-          function attachClearListener(el) {
-            if (!el) return;
-            // For radio row containers, attach listener to contained radios
-            if (el.querySelector && el.querySelectorAll('input[type="radio"]').length) {
-              const radios = Array.from(el.querySelectorAll('input[type="radio"]'));
-              const handler = () => { el.classList.remove('invalid'); radios.forEach(r => r.removeEventListener('change', handler)); };
-              radios.forEach(r => r.addEventListener('change', handler));
-              return;
-            }
-            // For regular inputs
-            const handler = () => { el.classList.remove('invalid'); el.removeEventListener('input', handler); el.removeEventListener('change', handler); };
-            el.addEventListener('input', handler);
-            el.addEventListener('change', handler);
-          }
-
-          if (missing.length) {
-            // mark elements visually and attach listeners to clear markers
-            elems.forEach(el => {
-              try { el.classList.add('invalid'); attachClearListener(el); } catch (err) {}
-            });
-            // show modal with list of missing fields and pass elements for focusing
-            showValidationModal('please fill out the required fields marked by a star', missing, elems);
+        const result = validateRSVPForm();
+        const missing = result.missing || [];
+        const elems = result.elems || [];
+        clearValidationMarks();
+        // helper to remove invalid class when user interacts
+        function attachClearListener(el) {
+          if (!el) return;
+          // For radio row containers, attach listener to contained radios
+          if (el.querySelector && el.querySelectorAll('input[type="radio"]').length) {
+            const radios = Array.from(el.querySelectorAll('input[type="radio"]'));
+            const handler = () => { el.classList.remove('invalid'); radios.forEach(r => r.removeEventListener('change', handler)); };
+            radios.forEach(r => r.addEventListener('change', handler));
             return;
           }
-        // proceed to thank-you when validation passes
-        window.location.href = 'thank-you.html';
+          // For regular inputs
+          const handler = () => { el.classList.remove('invalid'); el.removeEventListener('input', handler); el.removeEventListener('change', handler); };
+          el.addEventListener('input', handler);
+          el.addEventListener('change', handler);
+        }
+
+        if (missing.length) {
+          // mark elements visually and attach listeners to clear markers
+          elems.forEach(el => {
+            try { el.classList.add('invalid'); attachClearListener(el); } catch (err) {}
+          });
+          // show modal with list of missing fields and pass elements for focusing
+          showValidationModal('please fill out the required fields marked by a star', missing, elems);
+          return;
+        }
+
+        // submit to Apps Script then redirect
+        const guests = buildGuestsPayload();
+        if (!guests.length) {
+          showValidationModal('No guests found. Please try again.', [], []);
+          return;
+        }
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+        try {
+          await submitRsvp({ guests });
+          window.location.href = 'thank-you.html';
+        } catch (err) {
+          showValidationModal(err?.message || 'Failed to submit RSVP. Please try again.', [], []);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
       });
     });
 
