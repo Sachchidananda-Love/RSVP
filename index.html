@@ -510,6 +510,11 @@
       gap: 14px 18px;
       margin-bottom: 10px;
       justify-content: center;
+      align-items: start;
+    }
+
+    .rsvp-grid .rsvp-field {
+      align-self: start;
     }
 
     .rsvp-field {
@@ -527,13 +532,17 @@
     .required {
       position: relative;
     }
-
     .required::after {
-      content: " *";
+      content: "*";
       color: var(--orange);
       font-weight: 800;
-      margin-left: 6px;
-      font-size: 1.5em;
+      /* absolutely position the asterisk so it doesn't change label height
+         (keeps inputs aligned when some labels are required and others not) */
+      position: absolute;
+      left: calc(100% + 6px);
+      top: 0.1em;
+      font-size: 1em;
+      line-height: 1;
     }
 
     .rsvp-field input,
@@ -1025,7 +1034,9 @@
         <h2 class="info-title">Other Info</h2>
         <ul class="info-list">
           <li>We ask that guests do not try to touch or get too near the horses except with farm supervision.</li>
-          <li>There will be some wine and beer provided on tables for the meal; anything further will be BYOB.</li>
+          <li>There will be some wine provided on tables for the meal; anything further will be BYOB.</li>
+          <li>We may notify you of changes by updating the digital wallet pass—please add it to your device on the next page.</li>
+          <li>For those camping overnight, please note there will be music and chatter going on all night, past sunrise.</li>
         </ul>
       </div>
     </section>
